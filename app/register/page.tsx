@@ -93,7 +93,7 @@ export default function RegisterPage() {
             Create an Account
           </CardTitle>
           <CardDescription>
-            Enter your details below to register for ExpenseTrail
+            Enter your details below to register for ReadLog
           </CardDescription>
         </CardHeader>
 

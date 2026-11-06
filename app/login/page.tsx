@@ -81,7 +81,7 @@ export default function LoginPage() {
             Welcome Back
           </CardTitle>
           <CardDescription>
-            Enter your credentials to access your expenses
+            Enter your credentials to access your reading logs
           </CardDescription>
         </CardHeader>
 
