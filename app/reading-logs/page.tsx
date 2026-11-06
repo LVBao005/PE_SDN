@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useExpense } from "@/context/ExpenseContext";
+import { useReadingLog } from "@/context/ReadingLogContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +17,11 @@ import {
   RotateCcw,
   AlertCircle,
   CheckCircle2,
-  PieChart,
+  BookOpen,
+  Clock,
 } from "lucide-react";
 
-const CATEGORIES = ["Food", "Transport", "Bills", "Shopping", "Other"] as const;
+const GENRES = ["Fiction", "Non-Fiction", "Sci-Fi", "Biography", "Other"] as const;
 
 function getTodayString(): string {
   const now = new Date();
@@ -30,29 +31,29 @@ function getTodayString(): string {
   return `${year}-${month}-${day}`;
 }
 
-export default function ExpensesPage() {
+export default function ReadingLogsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const {
-    expenses,
+    readingLogs,
     summary,
-    categoryFilter,
-    setCategoryFilter,
-    starredFilter,
-    setStarredFilter,
+    genreFilter,
+    setGenreFilter,
+    favoriteFilter,
+    setFavoriteFilter,
     searchQuery,
     setSearchQuery,
     clearFilters,
-    addExpense,
-    toggleStar,
-    deleteExpense,
-  } = useExpense();
+    addReadingLog,
+    toggleFavorite,
+    deleteReadingLog,
+  } = useReadingLog();
 
   // Form states
-  const [title, setTitle] = useState("");
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
+  const [bookTitle, setBookTitle] = useState("");
+  const [minutesRead, setMinutesRead] = useState("");
+  const [genre, setGenre] = useState("");
   const [note, setNote] = useState("");
   const [date, setDate] = useState("");
 
@@ -61,7 +62,7 @@ export default function ExpensesPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Authentication guard
+  // Auth guard
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login");
@@ -73,26 +74,26 @@ export default function ExpensesPage() {
   }
 
   // Field validation functions
-  const getTitleError = () => {
+  const getBookTitleError = () => {
     if (!hasSubmitted) return "";
-    if (!title.trim()) return "Title is required";
-    if (title.trim().length > 80) return "Title must be at most 80 characters";
+    if (!bookTitle.trim()) return "Book title is required";
+    if (bookTitle.trim().length > 80) return "Book title must be at most 80 characters";
     return "";
   };
 
-  const getAmountError = () => {
+  const getMinutesError = () => {
     if (!hasSubmitted) return "";
-    if (amount === "" || amount === undefined || amount === null) return "Amount is required";
-    const num = Number(amount);
-    if (isNaN(num)) return "Amount is required";
-    if (num <= 0) return "Amount must be a positive number";
+    if (minutesRead === "" || minutesRead === undefined || minutesRead === null) return "Minutes read is required";
+    const num = Number(minutesRead);
+    if (isNaN(num)) return "Minutes read is required";
+    if (num <= 0) return "Minutes read must be a positive number";
     return "";
   };
 
-  const getCategoryError = () => {
+  const getGenreError = () => {
     if (!hasSubmitted) return "";
-    if (!category.trim()) return "Please choose a category";
-    if (!CATEGORIES.includes(category.trim() as any)) return "Invalid category";
+    if (!genre.trim()) return "Please choose a genre";
+    if (!GENRES.includes(genre.trim() as any)) return "Invalid genre";
     return "";
   };
 
@@ -104,9 +105,9 @@ export default function ExpensesPage() {
     return "";
   };
 
-  const titleError = getTitleError();
-  const amountError = getAmountError();
-  const categoryError = getCategoryError();
+  const bookTitleError = getBookTitleError();
+  const minutesError = getMinutesError();
+  const genreError = getGenreError();
   const dateError = getDateError();
 
   const handleAddSubmit = async (e: React.FormEvent) => {
@@ -117,104 +118,104 @@ export default function ExpensesPage() {
 
     // Validate
     let isValid = true;
-    if (!title.trim() || title.trim().length > 80) isValid = false;
-    const num = Number(amount);
-    if (amount === "" || isNaN(num) || num <= 0) isValid = false;
-    if (!category.trim() || !CATEGORIES.includes(category.trim() as any)) isValid = false;
+    if (!bookTitle.trim() || bookTitle.trim().length > 80) isValid = false;
+    const num = Number(minutesRead);
+    if (minutesRead === "" || isNaN(num) || num <= 0) isValid = false;
+    if (!genre.trim() || !GENRES.includes(genre.trim() as any)) isValid = false;
     const todayStr = getTodayString();
     if (!date.trim() || date.trim() > todayStr) isValid = false;
 
     if (!isValid) return;
 
     setIsSubmitting(true);
-    const result = await addExpense({
-      title: title.trim(),
-      amount: num,
-      category: category.trim(),
+    const result = await addReadingLog({
+      bookTitle: bookTitle.trim(),
+      minutesRead: Math.round(num),
+      genre: genre.trim(),
       note: note.trim(),
-      spentAt: date.trim(),
+      readOn: date.trim(),
     });
 
     setIsSubmitting(false);
 
     if (result.success) {
-      setSuccessMessage("Expense added");
-      setTitle("");
-      setAmount("");
-      setCategory("");
+      setSuccessMessage("Reading session added");
+      setBookTitle("");
+      setMinutesRead("");
+      setGenre("");
       setNote("");
       setDate("");
       setHasSubmitted(false);
     } else {
-      setFormError(result.error || "Failed to add expense");
+      setFormError(result.error || "Failed to add reading session");
     }
   };
 
   return (
-    <div data-testid="expenses-page" className="container mx-auto max-w-6xl py-8 px-4 sm:px-6">
+    <div data-testid="reading-logs-page" className="container mx-auto max-w-6xl py-8 px-4 sm:px-6">
       <div className="flex flex-col gap-8">
         {/* Top Summary Bar */}
         <Card className="border-slate-200 shadow-sm bg-gradient-to-r from-indigo-50/50 via-white to-slate-50">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-indigo-600" />
-                <CardTitle className="text-xl font-bold text-slate-900">Spending Overview</CardTitle>
+                <Clock className="h-5 w-5 text-indigo-600" />
+                <CardTitle className="text-xl font-bold text-slate-900">Reading Summary</CardTitle>
               </div>
             </div>
-            <CardDescription>Live analytics of currently filtered expenses</CardDescription>
+            <CardDescription>Live overview of currently filtered reading sessions</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4 border-b border-slate-100">
               <div className="rounded-lg bg-white p-4 border border-slate-200/80 shadow-xs">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Expenses</p>
-                <p data-testid="expense-count" className="text-2xl font-bold text-slate-900 mt-1">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Sessions</p>
+                <p data-testid="reading-log-count" className="text-2xl font-bold text-slate-900 mt-1">
                   {summary.count}
                 </p>
               </div>
 
               <div className="rounded-lg bg-white p-4 border border-slate-200/80 shadow-xs">
                 <p className="text-xs font-medium text-amber-600 uppercase tracking-wider flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> Starred Items
+                  <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> Favorites
                 </p>
-                <p data-testid="starred-count" className="text-2xl font-bold text-amber-700 mt-1">
-                  {summary.starredCount}
+                <p data-testid="favorite-count" className="text-2xl font-bold text-amber-700 mt-1">
+                  {summary.favoriteCount}
                 </p>
               </div>
 
               <div className="rounded-lg bg-white p-4 border border-slate-200/80 shadow-xs">
-                <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider">Total Amount</p>
-                <p data-testid="total-amount" className="text-2xl font-bold text-indigo-700 mt-1">
-                  {summary.totalAmount.toFixed(2)}
+                <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider">Total Minutes</p>
+                <p data-testid="total-minutes" className="text-2xl font-bold text-indigo-700 mt-1">
+                  {summary.totalMinutes}
                 </p>
               </div>
             </div>
 
-            {/* Category Breakdown */}
-            <div data-testid="category-breakdown" className="mt-4 space-y-2">
+            {/* Genre Breakdown */}
+            <div data-testid="genre-breakdown" className="mt-4 space-y-2">
               <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Category Breakdown
+                Genre Breakdown
               </h4>
               {summary.breakdown.length === 0 ? (
-                <p className="text-sm text-slate-400 italic">No category data for current filter.</p>
+                <p className="text-sm text-slate-400 italic">No genre data for current filter.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {summary.breakdown.map((b) => (
                     <div
-                      key={b.category}
+                      key={b.genre}
                       data-testid="breakdown-row"
                       className="flex items-center justify-between rounded-lg bg-white p-3 border border-slate-200 shadow-xs"
                     >
                       <div>
                         <span data-testid="breakdown-name" className="font-semibold text-sm text-slate-800">
-                          {b.category}
+                          {b.genre}
                         </span>
                         <div className="text-xs text-slate-500">
-                          <span data-testid="breakdown-count">{b.count}</span> {b.count === 1 ? "expense" : "expenses"}
+                          <span data-testid="breakdown-count">{b.count}</span> {b.count === 1 ? "session" : "sessions"}
                         </div>
                       </div>
                       <span data-testid="breakdown-total" className="text-sm font-bold text-slate-900">
-                        {b.total.toFixed(2)}
+                        {b.total}
                       </span>
                     </div>
                   ))}
@@ -226,20 +227,20 @@ export default function ExpensesPage() {
 
         {/* Main Grid: Form on Left/Top, List on Right/Bottom */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Add Expense Form (lg:col-span-5) */}
+          {/* Add Reading Session Form (lg:col-span-5) */}
           <div className="lg:col-span-5">
             <Card className="border-slate-200 shadow-sm sticky top-20">
               <CardHeader>
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                   <PlusCircle className="h-5 w-5 text-indigo-600" />
-                  Add New Expense
+                  Add a Reading Session
                 </CardTitle>
-                <CardDescription>Enter details of the transaction</CardDescription>
+                <CardDescription>Enter details of your reading session</CardDescription>
               </CardHeader>
               <CardContent>
                 {formError && (
                   <div
-                    data-testid="error-expense"
+                    data-testid="error-reading-log"
                     className="mb-4 flex items-center gap-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-700 border border-rose-200"
                   >
                     <AlertCircle className="h-4 w-4 shrink-0" />
@@ -249,7 +250,7 @@ export default function ExpensesPage() {
 
                 {successMessage && (
                   <div
-                    data-testid="expense-success"
+                    data-testid="reading-log-success"
                     className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 border border-emerald-200"
                   >
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -258,82 +259,82 @@ export default function ExpensesPage() {
                 )}
 
                 <form
-                  data-testid="expense-form"
+                  data-testid="reading-log-form"
                   noValidate
                   onSubmit={handleAddSubmit}
                   className="space-y-4"
                 >
-                  {/* Title */}
+                  {/* Book Title */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="input-title">Title</Label>
+                    <Label htmlFor="input-book-title">Book Title</Label>
                     <Input
-                      id="input-title"
-                      data-testid="input-title"
-                      value={title}
+                      id="input-book-title"
+                      data-testid="input-book-title"
+                      value={bookTitle}
                       onChange={(e) => {
-                        setTitle(e.target.value);
+                        setBookTitle(e.target.value);
                         if (formError) setFormError("");
                         if (successMessage) setSuccessMessage("");
                       }}
-                      placeholder="e.g. Grab to campus, Lunch"
+                      placeholder="e.g. Atomic Habits, Clean Code"
                       disabled={isSubmitting}
                     />
-                    {titleError && (
-                      <p data-testid="error-title" className="text-xs text-rose-600 font-medium">
-                        {titleError}
+                    {bookTitleError && (
+                      <p data-testid="error-book-title" className="text-xs text-rose-600 font-medium">
+                        {bookTitleError}
                       </p>
                     )}
                   </div>
 
-                  {/* Amount */}
+                  {/* Minutes Read */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="input-amount">Amount</Label>
+                    <Label htmlFor="input-minutes">Minutes Read</Label>
                     <Input
-                      id="input-amount"
+                      id="input-minutes"
                       type="number"
-                      step="any"
-                      data-testid="input-amount"
-                      value={amount}
+                      step="1"
+                      data-testid="input-minutes"
+                      value={minutesRead}
                       onChange={(e) => {
-                        setAmount(e.target.value);
+                        setMinutesRead(e.target.value);
                         if (formError) setFormError("");
                         if (successMessage) setSuccessMessage("");
                       }}
-                      placeholder="e.g. 45000"
+                      placeholder="e.g. 40"
                       disabled={isSubmitting}
                     />
-                    {amountError && (
-                      <p data-testid="error-amount" className="text-xs text-rose-600 font-medium">
-                        {amountError}
+                    {minutesError && (
+                      <p data-testid="error-minutes" className="text-xs text-rose-600 font-medium">
+                        {minutesError}
                       </p>
                     )}
                   </div>
 
-                  {/* Category Dropdown */}
+                  {/* Genre Dropdown */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="input-category">Category</Label>
+                    <Label htmlFor="input-genre">Genre</Label>
                     <select
-                      id="input-category"
-                      data-testid="input-category"
-                      value={category}
+                      id="input-genre"
+                      data-testid="input-genre"
+                      value={genre}
                       onChange={(e) => {
-                        setCategory(e.target.value);
+                        setGenre(e.target.value);
                         if (formError) setFormError("");
                         if (successMessage) setSuccessMessage("");
                       }}
                       disabled={isSubmitting}
                       className="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <option value="">Choose category</option>
-                      {CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
+                      <option value="">Choose genre</option>
+                      {GENRES.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
                         </option>
                       ))}
                     </select>
-                    {categoryError && (
-                      <p data-testid="error-category" className="text-xs text-rose-600 font-medium">
-                        {categoryError}
+                    {genreError && (
+                      <p data-testid="error-genre" className="text-xs text-rose-600 font-medium">
+                        {genreError}
                       </p>
                     )}
                   </div>
@@ -368,25 +369,25 @@ export default function ExpensesPage() {
                       data-testid="input-note"
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
-                      placeholder="e.g. Morning class with friends"
+                      placeholder="e.g. Chapter 3, Great insights"
                       disabled={isSubmitting}
                     />
                   </div>
 
                   <Button
                     type="submit"
-                    data-testid="btn-add-expense"
+                    data-testid="btn-add-reading-log"
                     className="w-full mt-2"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Adding Expense..." : "Add Expense"}
+                    {isSubmitting ? "Adding Session..." : "Add Reading Session"}
                   </Button>
                 </form>
               </CardContent>
             </Card>
           </div>
 
-          {/* Filters & Expense List (lg:col-span-7) */}
+          {/* Filters & Reading Log List (lg:col-span-7) */}
           <div className="lg:col-span-7 space-y-6">
             {/* Filter Toolbar */}
             <Card className="border-slate-200 shadow-sm">
@@ -400,23 +401,23 @@ export default function ExpensesPage() {
                       data-testid="search-input"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search title or note..."
+                      placeholder="Search book title or note..."
                       className="pl-9"
                     />
                   </div>
 
-                  {/* Category Filter */}
+                  {/* Genre Filter */}
                   <div className="w-full sm:w-44">
                     <select
-                      data-testid="filter-category"
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      data-testid="filter-genre"
+                      value={genreFilter}
+                      onChange={(e) => setGenreFilter(e.target.value)}
                       className="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
                     >
-                      <option value="">All Categories</option>
-                      {CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
+                      <option value="">All Genres</option>
+                      {GENRES.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
                         </option>
                       ))}
                     </select>
@@ -424,17 +425,17 @@ export default function ExpensesPage() {
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
-                  {/* Starred Filter Checkbox */}
+                  {/* Favorites Filter Checkbox */}
                   <label className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-slate-700">
                     <input
                       type="checkbox"
-                      data-testid="filter-starred"
-                      checked={starredFilter}
-                      onChange={(e) => setStarredFilter(e.target.checked)}
+                      data-testid="filter-favorite"
+                      checked={favoriteFilter}
+                      onChange={(e) => setFavoriteFilter(e.target.checked)}
                       className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     />
                     <span className="flex items-center gap-1">
-                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" /> Starred only
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" /> Favorites only
                     </span>
                   </label>
 
@@ -453,41 +454,41 @@ export default function ExpensesPage() {
               </CardContent>
             </Card>
 
-            {/* Expenses List */}
-            <div data-testid="expense-list" className="space-y-3">
-              {expenses.length === 0 ? (
+            {/* Reading Log List */}
+            <div data-testid="reading-log-list" className="space-y-3">
+              {readingLogs.length === 0 ? (
                 <div
-                  data-testid="expenses-empty"
+                  data-testid="reading-logs-empty"
                   className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500"
                 >
                   <Filter className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-                  <p className="text-base font-medium">No expenses found</p>
+                  <p className="text-base font-medium">No reading sessions found</p>
                   <p className="text-xs text-slate-400 mt-1">
-                    Try adjusting your filters or record a new expense above.
+                    Try adjusting your filters or record a new reading session above.
                   </p>
                 </div>
               ) : (
-                expenses.map((item) => (
+                readingLogs.map((item) => (
                   <div
                     key={item.id}
-                    data-testid="expense-item"
+                    data-testid="reading-log-item"
                     className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-200 bg-white shadow-xs hover:shadow-sm transition"
                   >
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span data-testid="expense-title" className="font-semibold text-slate-900 text-base">
-                          {item.title}
+                        <span data-testid="reading-log-title" className="font-semibold text-slate-900 text-base">
+                          {item.bookTitle}
                         </span>
                         <span
-                          data-testid="expense-category"
+                          data-testid="reading-log-genre"
                           className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200"
                         >
-                          {item.category}
+                          {item.genre}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-3 text-xs text-slate-500">
-                        <span data-testid="expense-date">{item.spentAt}</span>
+                        <span data-testid="reading-log-date">{item.readOn}</span>
                         {item.note && (
                           <>
                             <span>•</span>
@@ -498,23 +499,23 @@ export default function ExpensesPage() {
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
-                      <span data-testid="expense-amount" className="font-bold text-lg text-slate-900">
-                        {item.amount.toFixed(2)}
+                      <span data-testid="reading-log-minutes" className="font-bold text-lg text-slate-900">
+                        {item.minutesRead}
                       </span>
 
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          data-testid="btn-toggle-star"
-                          aria-pressed={item.starred ? "true" : "false"}
-                          onClick={() => toggleStar(item.id, item.starred)}
-                          title={item.starred ? "Remove star" : "Add star"}
+                          data-testid="btn-toggle-favorite"
+                          aria-pressed={item.favorite ? "true" : "false"}
+                          onClick={() => toggleFavorite(item.id, item.favorite)}
+                          title={item.favorite ? "Remove favorite" : "Add favorite"}
                           className="h-8 w-8 text-slate-400 hover:text-amber-500"
                         >
                           <Star
                             className={`h-4 w-4 ${
-                              item.starred ? "fill-amber-400 text-amber-500" : ""
+                              item.favorite ? "fill-amber-400 text-amber-500" : ""
                             }`}
                           />
                         </Button>
@@ -522,9 +523,9 @@ export default function ExpensesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          data-testid="btn-delete-expense"
-                          onClick={() => deleteExpense(item.id)}
-                          title="Delete expense"
+                          data-testid="btn-delete-reading-log"
+                          onClick={() => deleteReadingLog(item.id)}
+                          title="Delete session"
                           className="h-8 w-8 text-slate-400 hover:text-rose-600"
                         >
                           <Trash2 className="h-4 w-4" />

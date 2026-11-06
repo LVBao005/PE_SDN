@@ -30,3 +30,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+.vercel
+.env*
+2.docx
+~$2.docx
+DE_THI_READLOG.txt
+extracted_2_docx.txt
+QE190130/~$190130.docx
+QE190130/QE190130.docx

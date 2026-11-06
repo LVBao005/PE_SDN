@@ -63,7 +63,7 @@ export default function LoginPage() {
         setAuthError(data.error || "Invalid email or password");
       } else {
         setUser(data);
-        router.push("/expenses");
+        router.push("/reading-logs");
         router.refresh();
       }
     } catch {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Wallet, LogOut, ArrowRight, User as UserIcon } from "lucide-react";
+import { BookOpen, LogOut, ArrowRight, User as UserIcon } from "lucide-react";
 
 export function Header() {
   const { user, logout, loading } = useAuth();
@@ -13,9 +13,9 @@ export function Header() {
       <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl text-indigo-600 hover:text-indigo-700 transition">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
-            <Wallet className="h-5 w-5" />
+            <BookOpen className="h-5 w-5" />
           </div>
-          <span>ExpenseTrail</span>
+          <span>ReadLog</span>
         </Link>
 
         <nav className="flex items-center gap-3">
@@ -24,11 +24,11 @@ export function Header() {
               {user ? (
                 <div className="flex items-center gap-3">
                   <Link
-                    href="/expenses"
-                    data-testid="link-expenses"
+                    href="/reading-logs"
+                    data-testid="link-reading-logs"
                     className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-indigo-600 transition px-3 py-1.5 rounded-md hover:bg-slate-100"
                   >
-                    Expenses
+                    Reading Logs
                     <ArrowRight className="h-4 w-4" />
                   </Link>
 
@@ -71,4 +71,3 @@ export function Header() {
     </header>
   );
 }
-
